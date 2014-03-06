@@ -88,20 +88,9 @@ if __name__ == '__main__':
                       '"$http_user_agent" "$http_x_forwarded_for" '
                       'upstream{$upstream_addr|$upstream_response_time|$upstream_status}')
 
-    #nginx access log, standard format
-    #log_file = open('custom_short.log', 'r')
-
-
-    #84.39.244.237 top.rbc.ru - [06/Mar/2014:00:02:54 +0400] GET /politics/05/03/2014/909229.shtml?utm_source=newsmail&utm_medium=news&utm_campaign=news_mail2 HTTP/1.0 "200" 83910 "http://news.mail.ru/politics/17252195/?frommail=1" "Opera/9.80 (Windows NT 6.2; WOW64) Presto/2.12.388 Version/12.16" "84.39.244.237" upstream{127.0.0.1:1026|0.088|200}
-
-    myString = '178.126.139.145 top.rbc.ru - [06/Mar/2014:00:02:54 +0400] GET /apple-touch-icon-precomposed.png HTTP/1.0 "200" 66635 "-" "Mozilla/5.0 (Linux; Android 4.0.3; MTC Viva Build/HuaweiU8816) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19" "178.126.139.145" upstream{-|-|-}'
-    #myString = '109.170.88.69 top.rbc.ru - [06/Mar/2014:00:01:37 +0400] GET /rbctv-videoinfo/details_by_url_new_json/?original_video=http://smotri.com/video/view/?id=v26861993ed8&original_video=http://smotri.com/video/view/?id=v2686206e7a3&original_video=http://smotri.com/video/view/?id=v2685667feb2%20&getMP4=true&preview=true HTTP/1.0 "200" 1479 "-" "Opera/9.80 (Windows NT 6.1; WOW64) Presto/2.12.388 Version/12.16" "unknown, 109.170.88.69" upstream{-|-|-}'
-    #myString = '198.240.128.75 top.rbc.ru - [06/Mar/2014:00:01:37 +0400] GET /textonlines/05/03/2014/909342.shtml HTTP/1.1 "200" 104136 "http://top.rbc.ru/textonlines/05/03/2014/909342.shtml" "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)" "" upstream{-|-|-}'
-
     rePattern = dict_sub(nginxLogFormat)
 
     object = re.compile(rePattern)
-    #result = re.finditer(rePattern, myString)
 
     logFileName = 'custom_short.log'
 
