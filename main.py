@@ -202,6 +202,8 @@ defaultNginxLogFormat = ('$remote_addr $host $remote_user [$time_local] $request
 if __name__ == '__main__':
     #restore settings
     configFileName = "worker.config.json"
+    nginxLogFormat = defaultNginxLogFormat
+
     try:
         configFile = open(configFileName, "r")
         try:
@@ -225,13 +227,14 @@ if __name__ == '__main__':
         if len(params) == 2:
             if params[0] == '-file':
                 config['filename'] = params[1]
+            if params[1] == '-nginx':
+                nginxLogFormat = params[1]
         else:
             if params[0] == '-verbose':
                 verboseMode = True
 
 
     scriptTimeStart = time.time()
-    nginxLogFormat = defaultNginxLogFormat
 
     rePattern = dict_sub(nginxLogFormat)
 
