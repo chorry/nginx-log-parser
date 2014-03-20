@@ -1,3 +1,6 @@
+from Sender import Sender
+from Sender.UdpSender import UdpSender
+from Sender.StdoutSender import StdoutSender
 class Aggregator:
     #max amount of results in buffer
     maxBufferSize = 100
@@ -6,6 +9,13 @@ class Aggregator:
     times = 0
     #seconds
     timeInterval = 1
+
+
+    def __init__(self):
+        self.sender = StdoutSender()
+
+    def setSender(self, senderObj):
+        self.sender = senderObj
 
     def aggregate(self, logTaskResultDict):
         for logTaskResult in logTaskResultDict:
@@ -35,6 +45,7 @@ class Aggregator:
             else:
                 raise Exception("Unknown log result?")
 
+        self.sender.sendData( "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries) )
         #print "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries)
         #print "---buffer has flushed %d times!---\n" % self.times
 
@@ -46,3 +57,6 @@ class Aggregator:
 
     def aggregateUpstreamAvgByTimeInterval(self):
         pass
+
+
+a = Aggregator()
