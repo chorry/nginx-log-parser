@@ -5,6 +5,8 @@ from logTask import logTask, logTaskResult
 from aggregator import Aggregator
 import re
 import time
+import json
+import fcntl
 import sys
 from pprint import pprint
 import ctypes
@@ -86,8 +88,8 @@ def parseLogLine(compiledReObject, text, displayResult=True):
                 resultObj[group_name_by_index[group_index + 1]] = group
 
     if iteratorSize == 0:
-        #raise Exception("Could not parse [ %s ]" % text)
-        print ("Could not parse [ %s ]" % text)
+        if displayResult:
+            print ("Could not parse [ %s ]" % text)
         return None
 
     #TODO: do something with this date
@@ -102,6 +104,7 @@ def parseLogLine(compiledReObject, text, displayResult=True):
 
     return resultObj
 
+
 def tryUpstreamsRespAvg(v, default=0):
     try:
         ret = float(v)
@@ -113,6 +116,8 @@ def tryUpstreamsRespAvg(v, default=0):
 
 """ Processes all attached tasks to parsed log object, if applicable
 """
+
+
 def processLogTasks(object):
     result = []
     for task in getAttachedTaskLists():
@@ -139,6 +144,8 @@ attachedTasks = []
 '''
 ----------- TASKS -----------
 '''
+
+
 def isCachedQuery(self, logObject):
     cacheKey = 'missed' if (logObject['upstream_addr'] != '-') else 'hit'
 
@@ -150,6 +157,7 @@ def isCachedQuery(self, logObject):
     r.setTime(logObject['t_time_local'][:8])
 
     return r
+
 
 def getUpstreamAvgResp(self, logObject):
     upstreamRespAvg = 0
@@ -180,10 +188,14 @@ attachedTasks.append(upAvgLogTask)
 aggregator = Aggregator()
 
 swapFileName = 'worker.swap'
+defaultConfig = {
+    'offset': 0,
+    'linenum': 0,
+    'filename': None
+}
 
 if __name__ == '__main__':
 
-    print "Start @ " + time.asctime()
     scriptTimeStart = time.time()
     nginxLogFormat = ('$remote_addr $host $remote_user [$time_local] $request '
                       '"$status" $body_bytes_sent "$http_referer" '
@@ -194,33 +206,53 @@ if __name__ == '__main__':
 
     object = re.compile(rePattern)
 
-    logFileName = 'bigLog.log'
+    configFileName = "worker.config.json"
+    logFileName = 'custom_log'
 
-    linenum = 0
+    #restore settings
+    try:
+        configFile = open(configFileName, "r")
+        try:
+            config = json.load(configFile)
+        except ValueError:
+            config = defaultConfig
+    except IOError:
+        open(configFileName, 'a').close()
+        config = defaultConfig
+
+    #non-blocking trick
+    configFile = open(configFileName, "r+")
+    fcntl.lockf(configFile, fcntl.LOCK_EX)
 
     hitsPerTimeInterval = Counter()
     cachedQuery = Counter()
     upstreamResp = Counter()
     upstreamList = []
 
-    a = 1
+    config['filename'] = logFileName
     with open(logFileName) as f:
+        f.seek(config['offset'])
+        line = f.readline()
+        while line != '':
+            config['offset'] = f.tell()
+            config['linenum'] += 1
 
-        for line in f:
-            if line != '':
-                linenum += 1
-                processedObj = parseLogLine(compiledReObject=object, text=line, displayResult=False)
+            processedObj = parseLogLine(compiledReObject=object, text=line, displayResult=False)
 
-                r = None
-                if processedObj is not None:
-                    r = processLogTasks(processedObj)
-                if r is not None:
-                    aggregator.aggregate(r)
+            r = None
+            if processedObj is not None:
+                r = processLogTasks(processedObj)
+            if r is not None:
+                aggregator.aggregate(r)
 
-aggregator.flushBuffer()
-print "End @ " + time.asctime()
+            json.dump(config, configFile)
+            configFile.seek(0)
 
-scriptTimeEnd = time.time()
-scriptTimeTotal = scriptTimeEnd - scriptTimeStart
-print "Running time: %f s" % scriptTimeTotal
+            line = f.readline()
+
+    aggregator.flushBuffer()
+
+    scriptTimeEnd = time.time()
+    scriptTimeTotal = scriptTimeEnd - scriptTimeStart
+    print "Running time: %f s" % scriptTimeTotal
 
