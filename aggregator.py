@@ -35,8 +35,8 @@ class Aggregator:
             else:
                 raise Exception("Unknown log result?")
 
-        print "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries)
-        print "---buffer has flushed %d times!---\n" % self.times
+        #print "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries)
+        #print "---buffer has flushed %d times!---\n" % self.times
 
         self.bufferCount = 0
         self.buffer = []

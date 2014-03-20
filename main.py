@@ -193,23 +193,15 @@ defaultConfig = {
     'linenum': 0,
     'filename': None
 }
+verboseMode = False
 
-if __name__ == '__main__':
-
-    scriptTimeStart = time.time()
-    nginxLogFormat = ('$remote_addr $host $remote_user [$time_local] $request '
+defaultNginxLogFormat = ('$remote_addr $host $remote_user [$time_local] $request '
                       '"$status" $body_bytes_sent "$http_referer" '
                       '"$http_user_agent" "$http_x_forwarded_for" '
                       'upstream{$upstream_addr|$upstream_response_time|$upstream_status}')
-
-    rePattern = dict_sub(nginxLogFormat)
-
-    object = re.compile(rePattern)
-
-    configFileName = "worker.config.json"
-    logFileName = 'custom_log'
-
+if __name__ == '__main__':
     #restore settings
+    configFileName = "worker.config.json"
     try:
         configFile = open(configFileName, "r")
         try:
@@ -219,6 +211,36 @@ if __name__ == '__main__':
     except IOError:
         open(configFileName, 'a').close()
         config = defaultConfig
+
+    if len(sys.argv) < 2 and config == defaultConfig:
+        print """Usage:
+        --file=filename
+        --nginx=log_format_string
+        --verbose
+        """
+        exit()
+    for arg in sys.argv:
+        params = arg.split("=")
+
+        if len(params) == 2:
+            if params[0] == '-file':
+                config['filename'] = params[1]
+        else:
+            if params[0] == '-verbose':
+                verboseMode = True
+
+
+    scriptTimeStart = time.time()
+    nginxLogFormat = defaultNginxLogFormat
+
+    rePattern = dict_sub(nginxLogFormat)
+
+    object = re.compile(rePattern)
+
+
+    logFileName = config['filename']
+
+
 
     #non-blocking trick
     configFile = open(configFileName, "r+")
@@ -236,6 +258,12 @@ if __name__ == '__main__':
         while line != '':
             config['offset'] = f.tell()
             config['linenum'] += 1
+
+            if verboseMode:
+                sys.stdout.write('\r')
+                sys.stdout.flush()
+                sys.stdout.write( "Processed %d bytes" % config['offset'] )
+                sys.stdout.flush()
 
             processedObj = parseLogLine(compiledReObject=object, text=line, displayResult=False)
 
