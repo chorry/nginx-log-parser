@@ -34,9 +34,26 @@ class Task:
 
 
 class TaskResult:
-    result = None
+    result = []
     type = None
     time = None
+
+    def __init__(self, func = None):
+        self.result = []
+        if func is not None:
+            self.attachTask(func)
+
+    """Attaches task function"""
+    def attachTask(self, func):
+        self.task = types.MethodType(func, self)
+
+    def process(self, object):
+        if self.task != '':
+            result = self.task(object)
+        self.result.append( result )
+
+    def getResult(self):
+        return self.result
 
     def setType(self, type):
         self.type = type

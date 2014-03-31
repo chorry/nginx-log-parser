@@ -2,6 +2,7 @@
 import json
 import fcntl
 import re
+import res
 import os
 
 defaultConfig = {
@@ -9,6 +10,29 @@ defaultConfig = {
     'linenum': 0,
     'path': None
 }
+
+def dict_sub(text, d=res.LOG_PARAMS):
+    """ Replace in 'text' non-overlapping occurences of REs whose patterns are keys
+    in dictionary 'd' by corresponding values (which must be constant strings: may
+    have named backreferences but not numeric ones). The keys must not contain
+    anonymous matching-groups.
+    Returns the new string.
+    Thanks to Alex Martelli @
+    http://stackoverflow.com/questions/937697/can-you-pass-a-dictionary-when-replacing-strings-in-python
+    """
+    if d != res.LOG_SPECIAL_SYMBOLS:
+        text = dict_sub(text, res.LOG_SPECIAL_SYMBOLS)
+
+
+    # Create a regular expression  from the dictionary keys
+    regex = re.compile("|".join("(%s)" % k for k in d))
+    # Facilitate lookup from group number to value
+    lookup = dict((i + 1, v) for i, v in enumerate(d.itervalues()))
+    # For each match, find which group matched and expand its value
+    result = regex.sub(lambda mo: mo.expand(lookup[mo.lastindex]), text)
+
+    return result
+
 
 
 class LogParser:
@@ -42,6 +66,9 @@ class LogParser:
         except IOError:
             open(self.configFileName, 'a').close()
             self.config = defaultConfig
+
+    def setNginxPattern(self, pattern):
+        self.setRePattern( dict_sub(pattern) )
 
     def setRePattern(self, pattern):
         self.rePattern = pattern
@@ -104,11 +131,6 @@ class LogParser:
                     line = f.readline()
 
                     yield processedObj
-
-                    #if processedObj is not None:
-                    #    r = processLogTasks(processedObj)
-                    #if r is not None:
-                    #    aggregator.aggregate(r)
 
 
     def parseLogLine(self, compiledReObject, text, displayResult=True):

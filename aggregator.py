@@ -1,6 +1,8 @@
 from Sender import Sender
 from Sender.UdpSender import UdpSender
 from Sender.StdoutSender import StdoutSender
+
+
 class Aggregator:
     #max amount of results in buffer
     maxBufferSize = 100
@@ -13,6 +15,10 @@ class Aggregator:
 
     def __init__(self):
         self.sender = StdoutSender()
+        self.tasks = []
+
+    def addTask(self, taskObj):
+        self.tasks.append(taskObj)
 
     def setSender(self, senderObj):
         self.sender = senderObj
@@ -27,34 +33,26 @@ class Aggregator:
 
     def flushBuffer(self):
         self.times += 1
-        upstreamAvg = 0
-        cachedQueries = 0
-        upstreamQueries = 0
 
-        for bufferEl in self.buffer:
+        tmp =0
+        for task in self.getTaskList():
+            for bufferEl in self.buffer:
+                task.process(bufferEl)
+                tmp += 1
+                print tmp
+            print '::result::' , task.result
+            exit(0)
 
-            if bufferEl.type == 'upstreamAvg':
-                upstreamAvg += bufferEl.result if bufferEl.result is not None else 0
-                pass
-            elif bufferEl.type == 'cachedQuery':
-                if bufferEl.result == 1:
-                    cachedQueries += 1
-                else:
-                    upstreamQueries += 1
-                pass
-            else:
-                raise Exception("Unknown log result?")
+            self.sender.sendData(task.result)
 
-        processedData = "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries)
-        self.sender.sendData( processedData )
+        #processedData = "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries)
+        #self.sender.sendData( processedData )
+
         #print "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries)
         #print "---buffer has flushed %d times!---\n" % self.times
 
         self.bufferCount = 0
         self.buffer = []
 
-    def aggregateCachedQueriesByTimeInterval(self):
-        pass
-
-    def aggregateUpstreamAvgByTimeInterval(self):
-        pass
+    def getTaskList(self):
+        return self.tasks
