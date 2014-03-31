@@ -1,21 +1,18 @@
 from Sender import Sender
 from Sender.UdpSender import UdpSender
 from Sender.StdoutSender import StdoutSender
-
+import time
 
 class Aggregator:
-    #max amount of results in buffer
-    maxBufferSize = 100
     bufferCount = 0
     buffer = []
     times = 0
-    #seconds
-    timeInterval = 1
 
 
-    def __init__(self):
+    def __init__(self, maxBufferSize = 100):
         self.sender = StdoutSender()
         self.tasks = []
+        self.maxBufferSize = maxBufferSize
 
     def addTask(self, taskObj):
         self.tasks.append(taskObj)
@@ -34,25 +31,20 @@ class Aggregator:
     def flushBuffer(self):
         self.times += 1
 
-        tmp =0
         for task in self.getTaskList():
-            for bufferEl in self.buffer:
-                task.process(bufferEl)
-                tmp += 1
-                print tmp
-            print '::result::' , task.result
-            exit(0)
+            if task.hasTaskMap():
+                for bufferEl in self.buffer:
+                    task.processTaskMap(bufferEl)
+            if task.hasTaskReduce():
+                task.processTaskReduce()
 
             self.sender.sendData(task.result)
-
-        #processedData = "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries)
-        #self.sender.sendData( processedData )
-
-        #print "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries)
-        #print "---buffer has flushed %d times!---\n" % self.times
+            task.resetResult()
 
         self.bufferCount = 0
         self.buffer = []
+
+
 
     def getTaskList(self):
         return self.tasks
