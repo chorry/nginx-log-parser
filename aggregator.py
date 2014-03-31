@@ -45,7 +45,8 @@ class Aggregator:
             else:
                 raise Exception("Unknown log result?")
 
-        self.sender.sendData( "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries) )
+        processedData = "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries)
+        self.sender.sendData( processedData )
         #print "upstreamAvg=%f, cachedQ=%d, upstreamQ=%d" % (upstreamAvg, cachedQueries, upstreamQueries)
         #print "---buffer has flushed %d times!---\n" % self.times
 
@@ -57,6 +58,3 @@ class Aggregator:
 
     def aggregateUpstreamAvgByTimeInterval(self):
         pass
-
-
-a = Aggregator()
