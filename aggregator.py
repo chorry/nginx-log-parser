@@ -9,7 +9,7 @@ class Aggregator:
     times = 0
 
 
-    def __init__(self, maxBufferSize = 100):
+    def __init__(self, maxBufferSize = 'unlimited'):
         self.sender = StdoutSender()
         self.tasks = []
         self.maxBufferSize = maxBufferSize
@@ -22,11 +22,13 @@ class Aggregator:
 
     def aggregate(self, logTaskResultDict):
         for logTaskResult in logTaskResultDict:
-            if len(self.buffer) >= self.maxBufferSize:
-                self.flushBuffer()
-
             self.bufferCount += 1
             self.buffer.append(logTaskResult)
+
+            if self.maxBufferSize == 'unlimited':
+                return
+            if len(self.buffer) >= self.maxBufferSize:
+                self.flushBuffer()
 
     def flushBuffer(self):
         self.times += 1

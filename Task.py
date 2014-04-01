@@ -16,22 +16,42 @@ task.process( [1,-2,3] )
 
 
 class Task:
-    task = ''
+    task = None
+    filters = []
 
     def __init__(self, func):
         self.attachTask(func)
 
     def process(self, object):
         result = None
-        if self.task != '':
+        if self.task is not None:
+            for f in self.filters:
+                object = f.process(object)
             result = self.task(object)
         return result
 
     """Attaches task function"""
-
     def attachTask(self, func):
         self.task = types.MethodType(func, self)
 
+    """Attaches filter objects for task"""
+    def attachFilter(self, func):
+        self.filters.append(func)
+
+class TaskFilter:
+    filter = None
+
+    def __init__(self, func):
+        self.attach(func)
+
+    def process(self, object):
+        result = object
+        if self.filter is not None:
+            result =  self.filter(object)
+        return result
+
+    def attach(self, func):
+        self.filter = types.MethodType(func, self)
 
 class TaskResult:
     result = []
@@ -88,8 +108,8 @@ class TaskResult:
     def resetResult(self):
         self.result = []
 
-    def getResult(self):
-        return self.result
+    def hasResult(self):
+        return self.result if self.result != [] else None
 
     def setType(self, type):
         self.type = type
@@ -102,9 +122,5 @@ class TaskResult:
 
 
     def __repr__(self):
-        text = ("Result:%s, Type:%s, Time:%s \n" %
-                ( str(self.result or ''),
-                  str(self.type or ''),
-                  str(self.time or '') )
-        )
+        text =  ("Result:%s" % str(self.result or '') )
         return text

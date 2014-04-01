@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
+
 from collections import Counter
-from Task import Task, TaskResult
+from Task import Task, TaskResult, TaskFilter
 from aggregator import Aggregator
-import re
-import time
-import json
-import fcntl
 import sys
-import numpy
-import os
+import time
 from pprint import pprint
-import ctypes
+import signal
 
-import datetime, bisect, collections
 from logParser import LogParser
-
-import res
 
 
 """ Processes all attached tasks to parsed log object, if applicable
@@ -27,7 +21,7 @@ def processLogTasks(object):
     for task in getAttachedTaskLists():
         taskResult = task.process(object)
 
-        if taskResult is not None:
+        if taskResult.hasResult():
             result.append(taskResult)
 
     if len(result) > 0:
@@ -44,29 +38,16 @@ def getAttachedTaskLists():
 
 
 attachedTasks = []
-
-'''
------------ TASKS -----------
-'''
-
-
-def aggrResultTask(self, object):
-    print "----"
-    print (object)
-    print "^^^^^"
-
-def getAB_Value(self, logObject):
-    r = TaskResult()
-    r.setType('ab')
-    r.setResult(logObject['ab_cookie_value'])
-    return r
-
-
-attachedTasks.append( Task(getAB_Value) )
-
 aggregator = Aggregator()
 
-aggregator.addTask( TaskResult(aggrResultTask) )
+
+
+def signal_handler(signal, frame):
+        print('Aborted by user.')
+        aggregator.flushBuffer()
+        sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 
 swapFileName = 'worker.swap'
@@ -81,13 +62,17 @@ defaultNginxLogFormat = ('$remote_addr $host $remote_user [$time_local] $request
                          '"$status" $body_bytes_sent "$http_referer" '
                          '"$http_user_agent" "$http_x_forwarded_for" '
                          'upstream{$upstream_addr|$upstream_response_time|$upstream_status} $abCookieValue')
+
+#load tasks
+execfile('tasks/37944.py')
+
+
 if __name__ == '__main__':
     #restore settings
     configFileName = "worker.config.json"
     nginxLogFormat = defaultNginxLogFormat
 
-
-    config = { 'path' : 'logs/' }
+    config = {'path': 'logs/'}
 
     for arg in sys.argv:
         params = arg.split("=")
@@ -108,8 +93,8 @@ if __name__ == '__main__':
     upstreamResp = Counter()
     upstreamList = []
 
-    lParser = LogParser(configFileName=configFileName, configParams= config)
-    lParser.setNginxPattern( nginxLogFormat )
+    lParser = LogParser(configFileName=configFileName, configParams=config)
+    lParser.setNginxPattern(nginxLogFormat)
 
     resume = False
     for processedObj in lParser.parseFile():
@@ -119,7 +104,6 @@ if __name__ == '__main__':
                 aggregator.aggregate(r)
 
     aggregator.flushBuffer()
-
 
 scriptTimeEnd = time.time()
 scriptTimeTotal = scriptTimeEnd - scriptTimeStart
