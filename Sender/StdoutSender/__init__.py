@@ -9,5 +9,5 @@ class StdoutSender(Sender):
         pass
 
     def sendData(self, data):
-        print "%s" % data
+        print "STDOUT: %s" % data
 

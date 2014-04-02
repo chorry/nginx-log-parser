@@ -67,7 +67,7 @@ class LogParser:
             open(self.configFileName, 'a').close()
             self.config = defaultConfig
 
-    def setNginxPattern(self, pattern):
+    def setLogPattern(self, pattern):
         self.setRePattern( dict_sub(pattern) )
 
     def setRePattern(self, pattern):
@@ -90,7 +90,6 @@ class LogParser:
         return f
 
     def getLogFileList(self):
-        print (self.config)
         if os.path.isdir(self.config['path']):
             logFileList = self.getFilesFromFolder(self.config['path'])
         elif os.path.isfile(self.config['path']):
@@ -103,7 +102,9 @@ class LogParser:
     def parseFile(self, logFileList=None):
         if logFileList is None:
             logFileList = self.getLogFileList()
-        resume = False
+
+        resume = self.config['resumeOnFile']
+
         for logFileName in logFileList:
             if resume == False and 'currentFile' in self.config and self.config['currentFile'] != logFileName:
                 continue
@@ -153,13 +154,15 @@ class LogParser:
             return None
 
         #TODO: do something with this date
-        resultObj['t_date_local'] = resultObj['time_local'][:11]
-        resultObj['t_time_local'] = resultObj['time_local'][12:20]
-        if resultObj['upstream_response_time'] != '-':
-            if resultObj['upstream_response_time'].find(':') != -1:
-                splitKey = ':'
-            else:
-                splitKey = ','
-            resultObj['upstreams'] = resultObj['upstream_response_time'].split(splitKey)
-
+        #resultObj['t_date_local'] = resultObj['time_local'][:11]
+        #resultObj['t_time_local'] = resultObj['time_local'][12:20]
+        #if resultObj['upstream_response_time'] != '-':
+        #    if resultObj['upstream_response_time'].find(':') != -1:
+        #        splitKey = ':'
+        #    else:
+        #        splitKey = ','
+        #    resultObj['upstreams'] = resultObj['upstream_response_time'].split(splitKey)
         return resultObj
+
+    def updateLogParams(self, l):
+        res.LOG_PARAMS.update(l)

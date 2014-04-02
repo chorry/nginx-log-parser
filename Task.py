@@ -89,21 +89,21 @@ class TaskResult:
         return self.taskReduce != []
 
     def process(self, object):
-        if self.task != '':
+        if self.task is not None:
             result = self.task(object)
         self.result.append(result)
 
     def processTaskMap(self, object):
-        if self.taskMap != '':
+        if self.taskMap is not None:
             result = self.taskMap(object)
-        self.result.append(result)
+            self.result.append(result)
 
     def processTaskReduce(self):
         result = None
-        if self.taskReduce != '':
+        if self.taskReduce is not None:
             result = self.taskReduce(self)
-        self.resetResult()
-        self.result = result
+            self.resetResult()
+            self.result = result
 
     def resetResult(self):
         self.result = []

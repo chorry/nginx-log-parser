@@ -10,7 +10,7 @@ class Aggregator:
 
 
     def __init__(self, maxBufferSize = 'unlimited'):
-        self.sender = StdoutSender()
+        self.sender = None
         self.tasks = []
         self.maxBufferSize = maxBufferSize
 
@@ -33,6 +33,9 @@ class Aggregator:
     def flushBuffer(self):
         self.times += 1
 
+        if self.sender is None:
+            raise Exception("Sender object was not initialized")
+
         for task in self.getTaskList():
             if task.hasTaskMap():
                 for bufferEl in self.buffer:
@@ -45,7 +48,6 @@ class Aggregator:
 
         self.bufferCount = 0
         self.buffer = []
-
 
 
     def getTaskList(self):

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 
-from collections import Counter
+
+from Sender.TaskSender import TaskSender
 from Task import Task, TaskResult, TaskFilter
 from aggregator import Aggregator
 import sys
@@ -20,7 +21,6 @@ def processLogTasks(object):
     result = []
     for task in getAttachedTaskLists():
         taskResult = task.process(object)
-
         if taskResult.hasResult():
             result.append(taskResult)
 
@@ -64,15 +64,21 @@ defaultNginxLogFormat = ('$remote_addr $host $remote_user [$time_local] $request
                          'upstream{$upstream_addr|$upstream_response_time|$upstream_status} $abCookieValue')
 
 #load tasks
-execfile('tasks/37944.py')
+execfile('tasks/37944-test_v1.py')
+
 
 
 if __name__ == '__main__':
     #restore settings
     configFileName = "worker.config.json"
-    nginxLogFormat = defaultNginxLogFormat
+    nginxLogFormat = ('abtype userid')
 
-    config = {'path': 'logs/'}
+    config = {
+        'path'       : 'testset',
+        'currentFile': 'testset/set_1.txt',
+        'resumeOnFile': True,
+        'offset': 0
+    }
 
     for arg in sys.argv:
         params = arg.split("=")
@@ -86,26 +92,17 @@ if __name__ == '__main__':
             if params[0] == '-verbose':
                 config['verboseMode'] = True
 
-    scriptTimeStart = time.time()
-
-    hitsPerTimeInterval = Counter()
-    cachedQuery = Counter()
-    upstreamResp = Counter()
-    upstreamList = []
 
     lParser = LogParser(configFileName=configFileName, configParams=config)
-    lParser.setNginxPattern(nginxLogFormat)
+    lParser.updateLogParams( { 'userid': '(?P<userid>\d+)', 'abtype': '(?P<abtype>[A|B])' } )
+    lParser.setLogPattern(nginxLogFormat)
 
-    resume = False
-    for processedObj in lParser.parseFile():
+    #for processedObj in lParser.parseFile():
+    for processedObj in lParser.parseFile( ['testset/set_1.txt'] ):
         if processedObj is not None:
             r = processLogTasks(processedObj)
             if r is not None:
                 aggregator.aggregate(r)
 
     aggregator.flushBuffer()
-
-scriptTimeEnd = time.time()
-scriptTimeTotal = scriptTimeEnd - scriptTimeStart
-print "Running time: %f s" % scriptTimeTotal
-
+print "the end"
