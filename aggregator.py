@@ -31,8 +31,6 @@ class Aggregator:
                 self.flushBuffer()
 
     def flushBuffer(self):
-        self.times += 1
-
         if self.sender is None:
             raise Exception("Sender object was not initialized")
 

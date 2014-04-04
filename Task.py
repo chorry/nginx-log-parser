@@ -1,4 +1,4 @@
-import sys, types, pprint
+import types
 
 '''
 Simple logTask class

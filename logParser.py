@@ -4,7 +4,8 @@ import fcntl
 import re
 import res
 import os
-
+import time
+import pprint
 defaultConfig = {
     'offset': 0,
     'linenum': 0,
@@ -39,7 +40,8 @@ class LogParser:
     pass
 
     def __init__(self, configFileName=None, configParams=None):
-
+        self.lines_good = 0
+        self.lines_bad = 0
 
         if configFileName is None:
             configFileName = 'worker.config.json'
@@ -110,6 +112,7 @@ class LogParser:
                 continue
             resume = True
             self.config['currentFile'] = logFileName
+
             with open(logFileName) as f:
                 f.seek(self.config['offset'])
                 line = f.readline()
@@ -124,7 +127,7 @@ class LogParser:
                         sys.stdout.write( "Processed %d bytes " % self.config['offset'] )
                         sys.stdout.flush()
                     """
-                    processedObj = self.parseLogLine(compiledReObject=self.getReObject(), text=line,
+                    processedObj = self.parseLogLine(compiledReObject=self.getReObject(), text=line.strip(),
                                                      displayResult=self.displayResult)
 
                     json.dump(self.config, self.configFile)
@@ -135,11 +138,13 @@ class LogParser:
 
 
     def parseLogLine(self, compiledReObject, text, displayResult=True):
+
         result = compiledReObject.finditer(text)
         group_name_by_index = dict([(v, k) for k, v in compiledReObject.groupindex.items()])
 
         resultObj = {}
         iteratorSize = 0
+
         for match in result:
             iteratorSize += 1
             for group_index, group in enumerate(match.groups()):
@@ -150,7 +155,8 @@ class LogParser:
 
         if iteratorSize == 0:
             if displayResult:
-                print ("Could not parse [ %s ]" % text)
+                print "Could not parse [%s], reg:%s, instance" % (text, self.rePattern), self
+            self.lines_bad += 1
             return None
 
         #TODO: do something with this date
@@ -162,6 +168,7 @@ class LogParser:
         #    else:
         #        splitKey = ','
         #    resultObj['upstreams'] = resultObj['upstream_response_time'].split(splitKey)
+        self.lines_good += 1
         return resultObj
 
     def updateLogParams(self, l):
