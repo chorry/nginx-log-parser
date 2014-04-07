@@ -109,7 +109,7 @@ class ServerTask:
 if __name__ == '__main__':
     #restore settings
     configFileName = os.path.basename(__file__) + ".config.json"
-    logFileName = 'processedLogs/mergedU.20140402.B'
+    logFileName = 'processedLogs/merged.custom_log.' + compareLogDateFrom + '.' + abKey
     nginxLogFormat = defaultNginxLogFormat = ('abtype userid')
 
 

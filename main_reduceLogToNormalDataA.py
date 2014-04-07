@@ -107,7 +107,7 @@ class ServerTask:
 if __name__ == '__main__':
     #restore settings
     configFileName = os.path.basename(__file__) + ".config.json"
-    fileName = 'gt-custom_log.20140403'
+    #fileName = 'gt-custom_log.20140404' already defined at [task_reduce]
 
     nginxLogFormat = defaultNginxLogFormat = ('$remote_addr $host $remote_user [$time_local] $request '
                          '"$status" $body_bytes_sent "$http_referer" '

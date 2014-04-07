@@ -106,7 +106,6 @@ class ServerTask:
 if __name__ == '__main__':
     #restore settings
     configFileName = os.path.basename(__file__) + ".config.json"
-    fileName = 'gt-custom_log.20140403'
 
     nginxLogFormat = defaultNginxLogFormat = ('$remote_addr $host $remote_user [$time_local] $request '
                          '"$status" $body_bytes_sent "$http_referer" '
@@ -144,10 +143,6 @@ if __name__ == '__main__':
     serverTask.run()
 
 
-    #for processedObj in lParser.parseFile():
-
-
-    #aggregator.flushBuffer()
 print "the end"
 
 

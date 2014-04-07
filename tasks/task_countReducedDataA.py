@@ -40,11 +40,14 @@ def filterByTypeB(self, object):
     else:
         return None
 
-sender = FileSender()
-sender.setFileName('0203_A.log')
-sender.setCompareFile('processedLogs/mergedU.20140403.A')
-sender.setAbKey('A')
+compareLogDateFrom = '20140405'
+compareLogDateTo   = '20140406'
+abKey              = 'A'
 
+sender = FileSender()
+sender.setFileName(compareLogDateFrom + '-' + compareLogDateTo + abKey + '.log')
+sender.setCompareFile('processedLogs/merged.custom_log.' + compareLogDateTo + '.' + abKey)
+sender.setAbKey(abKey)
 
 aggregator.setSender( sender )
 aggregator.maxBufferSize = 1000

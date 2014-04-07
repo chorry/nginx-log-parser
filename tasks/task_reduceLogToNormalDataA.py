@@ -53,7 +53,7 @@ def filterByTypeB(self, object):
     else:
         return None
 
-fileName = 'gt-custom_log.20140403'
+fileName = 'gt-custom_log.20140406'
 saver = DataSaver()
 saver.setFileName('logs/reduced.' + fileName + '.A')
 
