@@ -40,7 +40,6 @@ class LogParser:
 
     def __init__(self, configFileName=None, configParams=None):
 
-
         if configFileName is None:
             configFileName = 'worker.config.json'
         self.configFileName = configFileName
@@ -53,7 +52,7 @@ class LogParser:
         self.configFile = open(self.configFileName, "r+")
         fcntl.lockf(self.configFile, fcntl.LOCK_EX)
 
-        self.displayResult = False
+        self.verboseMode = False
         self.reObject = None
 
     def readConfigFile(self, configFileName):
@@ -117,15 +116,8 @@ class LogParser:
                     self.config['offset'] = f.tell()
                     self.config['linenum'] += 1
 
-                    """
-                    if verboseMode:
-                        sys.stdout.write('\r')
-                        sys.stdout.flush()
-                        sys.stdout.write( "Processed %d bytes " % self.config['offset'] )
-                        sys.stdout.flush()
-                    """
                     processedObj = self.parseLogLine(compiledReObject=self.getReObject(), text=line,
-                                                     displayResult=self.displayResult)
+                                                     displayResult=self.verboseMode)
 
                     json.dump(self.config, self.configFile)
                     self.configFile.seek(0)
@@ -135,18 +127,19 @@ class LogParser:
 
 
     def parseLogLine(self, compiledReObject, text, displayResult=True):
+
         result = compiledReObject.finditer(text)
         group_name_by_index = dict([(v, k) for k, v in compiledReObject.groupindex.items()])
 
         resultObj = {}
         iteratorSize = 0
+
         for match in result:
             iteratorSize += 1
             for group_index, group in enumerate(match.groups()):
                 if group:
-                    if displayResult:
-                        print "%s : %s" % (group_name_by_index[group_index + 1], group)
-                    resultObj[group_name_by_index[group_index + 1]] = group
+                    if (group_index + 1) in group_name_by_index:
+                        resultObj[group_name_by_index[group_index + 1]] = group
 
         if iteratorSize == 0:
             if displayResult:

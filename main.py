@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 
-
-from Sender.TaskSender import TaskSender
-from Task import Task, TaskResult, TaskFilter
-from aggregator import Aggregator
 import sys
 import time
 from pprint import pprint
@@ -13,42 +9,12 @@ import signal
 from logParser import LogParser
 
 
-""" Processes all attached tasks to parsed log object, if applicable
-"""
-
-
-def processLogTasks(object):
-    result = []
-    for task in getAttachedTaskLists():
-        taskResult = task.process(object)
-        if taskResult.hasResult():
-            result.append(taskResult)
-
-    if len(result) > 0:
-        return result
-    else:
-        return None
-
-
-def getAttachedTaskLists():
-    try:
-        return attachedTasks
-    except NameError:
-        return ()
-
-
-attachedTasks = []
-aggregator = Aggregator()
-
-
-
 def signal_handler(signal, frame):
-        print('Aborted by user.')
-        aggregator.flushBuffer()
-        sys.exit(0)
+    print('Aborted by user.')
+    sys.exit(0)
+
 
 signal.signal(signal.SIGINT, signal_handler)
-
 
 swapFileName = 'worker.swap'
 defaultConfig = {
@@ -63,19 +29,20 @@ defaultNginxLogFormat = ('$remote_addr $host $remote_user [$time_local] $request
                          '"$http_user_agent" "$http_x_forwarded_for" '
                          'upstream{$upstream_addr|$upstream_response_time|$upstream_status} $abCookieValue')
 
-#load tasks
-execfile('tasks/37944-test_v1.py')
-
-
+upstream_ab36 = ('$remote_addr $host $remote_user [$time_local] $request '
+                '"$status" $body_bytes_sent "$http_referer" '
+                '"$http_user_agent" "$http_x_forwarded_for" '
+                'upstream{$upstream_addr|$upstream_response_time|$upstream_status} $cookie_ab_v6_version $abv3_6 $ab_var "$uid_got|$uid_set"'
+)
 
 if __name__ == '__main__':
     #restore settings
     configFileName = "worker.config.json"
-    nginxLogFormat = ('abtype userid')
+    nginxLogFormat = upstream_ab36
 
     config = {
-        'path'       : 'testset',
-        'currentFile': 'testset/set_1.txt',
+        'path': './',
+        'currentFile': None,
         'resumeOnFile': True,
         'offset': 0
     }
@@ -83,26 +50,35 @@ if __name__ == '__main__':
     for arg in sys.argv:
         params = arg.split("=")
 
-        if len(params) == 2:
-            if params[0] == '-path':
-                config['path'] = params[1]
-            if params[1] == '-nginx':
-                config['nginxLogFormat'] = params[1]
-        else:
-            if params[0] == '-verbose':
-                config['verboseMode'] = True
+        if params[0] == '-path':
+            config['path'] = params[1]
+        if params[0] == '-file':
+            config['currentFile'] = params[1]
+        if params[0] == '-nginx':
+            config['nginxLogFormat'] = params[1]
+        if params[0] == '-verbose':
+            config['verboseMode'] = True
 
+    if config['currentFile'] is None:
+        print ("Config file is not specified!\n")
+        print ("Use -file=FILENAME and -path=PATHNAME")
+        exit(0)
 
     lParser = LogParser(configFileName=configFileName, configParams=config)
-    lParser.updateLogParams( { 'userid': '(?P<userid>\d+)', 'abtype': '(?P<abtype>[A|B])' } )
+
+    #if you have custom fields, describe regex for them here
+    lParser.updateLogParams(
+        {'\$cookie_ab_v6_version': '(?P<cookie_ab_v6_version>(v\d|-))',
+         '\$abv3_6': '(?P<abv3_6>(v\d|-))',
+         '\$ab_var': '(?P<ab_var>(v\d|-))'
+        }
+    )
+
+
     lParser.setLogPattern(nginxLogFormat)
 
-    #for processedObj in lParser.parseFile():
-    for processedObj in lParser.parseFile( ['testset/set_1.txt'] ):
+    for processedObj in lParser.parseFile([config['path'] + config['currentFile']]):
         if processedObj is not None:
-            r = processLogTasks(processedObj)
-            if r is not None:
-                aggregator.aggregate(r)
+            pprint(processedObj)
 
-    aggregator.flushBuffer()
-print "the end"
+    print("the end")
