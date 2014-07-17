@@ -11,6 +11,7 @@ defaultConfig = {
     'path': None
 }
 
+
 def dict_sub(text, d=res.LOG_PARAMS):
     """ Replace in 'text' non-overlapping occurences of REs whose patterns are keys
     in dictionary 'd' by corresponding values (which must be constant strings: may
@@ -34,7 +35,6 @@ def dict_sub(text, d=res.LOG_PARAMS):
     return result
 
 
-
 class LogParser:
     pass
 
@@ -46,7 +46,7 @@ class LogParser:
         self.readConfigFile(configFileName)
 
         if configParams is not None:
-            self.config.update( configParams )
+            self.config.update(configParams)
 
         #non-blocking trick
         self.configFile = open(self.configFileName, "r+")
@@ -67,7 +67,7 @@ class LogParser:
             self.config = defaultConfig
 
     def setLogPattern(self, pattern):
-        self.setRePattern( dict_sub(pattern) )
+        self.setRePattern(dict_sub(pattern))
 
     def setRePattern(self, pattern):
         self.rePattern = pattern
@@ -77,7 +77,7 @@ class LogParser:
             self.reObject = re.compile(self.rePattern)
         return self.reObject
 
-    def getFilesFromFolder(self,path):
+    def getFilesFromFolder(self, path):
         f = []
         for (dirpath, dirnames, filenames) in os.walk(path):
             f.extend(
@@ -94,9 +94,20 @@ class LogParser:
         elif os.path.isfile(self.config['path']):
             logFileList = [self.config['path']]
         else:
-            raise Exception( "%s not found!" % self.config['path'] )
+            raise Exception("%s not found!" % self.config['path'])
 
         return logFileList
+
+    def parseCLIText(self, text):
+
+        processedObj = self.parseLogLine(
+            compiledReObject=self.getReObject(),
+            text=text,
+            displayResult=self.verboseMode)
+        yield processedObj
+
+    def getCurrentFileFullPath(self):
+        return self.config['path'] + '/' + self.config['currentFile']
 
     def parseFile(self, logFileList=None):
         if logFileList is None:
@@ -107,8 +118,14 @@ class LogParser:
         for logFileName in logFileList:
             if resume == False and 'currentFile' in self.config and self.config['currentFile'] != logFileName:
                 continue
+
+            if self.getCurrentFileFullPath() != logFileName:
+                self.config['offset'] = 0
+                self.config['linenum'] = 0
+
             resume = True
-            self.config['currentFile'] = logFileName
+
+            self.config['currentFile'] = os.path.basename(logFileName)
             with open(logFileName) as f:
                 f.seek(self.config['offset'])
                 line = f.readline()
@@ -142,8 +159,8 @@ class LogParser:
                         resultObj[group_name_by_index[group_index + 1]] = group
 
         if iteratorSize == 0:
-            if displayResult:
-                print ("Could not parse [ %s ]" % text)
+            if self.verboseMode:
+                print("Could not parse [ %s ]" % text)
             return None
 
         #TODO: do something with this date
